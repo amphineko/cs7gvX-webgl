@@ -5,7 +5,7 @@ import { ShaderProgram } from '../../components/canvas'
 import { WebGLCanvas } from '../../components/canvas/canvas'
 import FragmentShader from '../../resources/cs7gv5/hello-triangle.frag'
 import VertexShader from '../../resources/cs7gv5/hello-triangle.vert'
-import { FirstPersonCamera } from '../../src/cameras'
+import { OrbitCamera } from '../../src/cameras'
 
 const { toRadian } = glMatrix
 
@@ -35,7 +35,7 @@ const vertices = new Float32Array(
 
 const HelloTrianglePage: NextPage = () => {
     const currentAspectRatio = useRef(1.0)
-    const currentCamera = useRef<FirstPersonCamera>(new FirstPersonCamera(vec3.fromValues(0.0, 0.0, 5.0), 0, 270))
+    const currentCamera = useRef<OrbitCamera>(new OrbitCamera(vec3.fromValues(0.0, 0.0, 5.0), 0, 270))
     const currentShader = useRef<ShaderProgram>()
 
     const projection = mat4.create()
@@ -66,8 +66,8 @@ const HelloTrianglePage: NextPage = () => {
 
         currentCamera.current.addKeyboardListener()
         currentCamera.current.addMouseListener(canvas)
-        // TODO: add mouse listener
-        // TODO: remove listener on unmount
+
+        currentCamera.current.rotate(0.1, 0.1)
     }
 
     const draw = (gl: WebGL2RenderingContext) => {
@@ -82,16 +82,16 @@ const HelloTrianglePage: NextPage = () => {
         shader.use()
         shader.setMat4('projection', projection)
         shader.setMat4('model', model)
-        shader.setMat4('view', camera.view)
+        shader.setMat4('view', camera.viewMatrix)
 
         for (let i = 0; i < 5; i++) {
             gl.drawArrays(gl.TRIANGLES, i * 3, 3)
         }
     }
 
-    const deinitialize = (_: WebGL2RenderingContext, canvas: HTMLCanvasElement) => {
-        // currentCamera.current.removeMouseListener(canvas)
-        // currentCamera.current.removeKeyboardListener()
+    const deinitialize = () => {
+        currentCamera.current.removeMouseListener()
+        currentCamera.current.removeKeyboardListener()
     }
 
     return (
