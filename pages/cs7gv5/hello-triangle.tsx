@@ -2,7 +2,7 @@ import { glMatrix, mat4, vec3 } from 'gl-matrix'
 import { NextPage } from 'next'
 import { useRef } from 'react'
 import { ShaderProgram } from '../../components/canvas'
-import { FirstPersonCamera } from '../../components/canvas/camera_fp'
+import { FirstPersonCamera } from '../../src/cameras/camera_fp'
 import { WebGLCanvas } from '../../components/canvas/canvas'
 import FragmentShader from '../../resources/cs7gv5/hello-triangle.frag'
 import VertexShader from '../../resources/cs7gv5/hello-triangle.vert'
@@ -63,6 +63,10 @@ const HelloTrianglePage: NextPage = () => {
 
         gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 7 * f32size, 3 * f32size)
         gl.enableVertexAttribArray(1)
+
+        currentCamera.current.addKeyboardListener()
+        // TODO: add mouse listener
+        // TODO: remove listener on unmount
     }
 
     const draw = (gl: WebGL2RenderingContext) => {
