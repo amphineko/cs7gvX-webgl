@@ -40,7 +40,7 @@ export const WebGLCanvas = ({ onDraw, onError, onInitialize, onResize }: Props) 
 
         const gl = canvas.current.getContext('webgl2', {
             antialias: true,
-            depth: true,
+            depth: true, // NOTE: this only allocates a depth buffer, but not enabling
             desynchronized: true,
             stencil: true,
         })
@@ -52,6 +52,9 @@ export const WebGLCanvas = ({ onDraw, onError, onInitialize, onResize }: Props) 
         } else {
             console.debug('DEBUG:', 'WebGL context created')
         }
+
+        gl.enable(gl.DEPTH_TEST)
+        gl.depthFunc(gl.LEQUAL)
 
         onInitialize(gl, canvas.current)
 
