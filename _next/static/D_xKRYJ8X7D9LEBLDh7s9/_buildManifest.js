@@ -1,0 +1,1 @@
+self.__BUILD_MANIFEST={__rewrites:{beforeFiles:[],afterFiles:[],fallback:[]},"/_error":["static/chunks/pages/_error-2280fa386d040b66.js"],"/cs7gv5/hello-triangle":["static/chunks/279-bc0a569e7ee825bb.js","static/chunks/pages/cs7gv5/hello-triangle-700114bedfcfa306.js"],sortedPages:["/_app","/_error","/cs7gv5/hello-triangle"]},self.__BUILD_MANIFEST_CB&&self.__BUILD_MANIFEST_CB();
