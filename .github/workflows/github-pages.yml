@@ -23,3 +23,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - run: yarn && yarn build && yarn export
+      - run: |
+          git add out
+          git commit -m "[CI] chore: generated gh-pages static site"
+          git subtree push --prefix out origin gh-pages
