@@ -3,6 +3,8 @@ import { FirstPersonCamera } from '.'
 
 const { toRadian } = glMatrix
 
+const zoomRate = 0.025
+
 export class OrbitCamera extends FirstPersonCamera {
     private distance = 0
 
@@ -14,9 +16,17 @@ export class OrbitCamera extends FirstPersonCamera {
         this.distance = vec3.distance(this.position, this.origin)
     }
 
-    override rotate(offsetPitch: number, offsetYaw: number) {
-        console.log('distance=', this.distance)
+    addMouseListener(canvas: HTMLCanvasElement): void {
+        super.addMouseListener(canvas)
+        canvas.addEventListener('wheel', this.handleWheel)
+    }
 
+    removeMouseListener(): void {
+        super.removeMouseListener()
+        this.canvas.removeEventListener('wheel', this.handleWheel)
+    }
+
+    override rotate(offsetPitch: number, offsetYaw: number) {
         this.pitch += offsetPitch
         this.yaw += offsetYaw
 
@@ -29,6 +39,19 @@ export class OrbitCamera extends FirstPersonCamera {
 
         vec3.scaleAndAdd(this.position, this.origin, this.originFront, this.distance)
 
+        this.updateView()
+    }
+
+    private handleWheel = (ev: WheelEvent) => {
+        if (ev.deltaY !== 0) {
+            this.zoom(ev.deltaY)
+        }
+    }
+
+    private zoom(delta: number) {
+        const velocity = delta * zoomRate
+        vec3.scaleAndAdd(this.position, this.position, this.front, -velocity)
+        this.distance = vec3.distance(this.position, this.origin)
         this.updateView()
     }
 }

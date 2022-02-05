@@ -25,7 +25,7 @@ export class FirstPersonCamera implements ICamera {
     private keyboardNegative = vec3.fromValues(0, 0, 0)
     private keyboardPositive = vec3.fromValues(0, 0, 0)
 
-    private canvas: HTMLCanvasElement
+    protected canvas: HTMLCanvasElement
 
     constructor(position: vec3, pitch: number, yaw: number) {
         this.position = vec3.clone(position)
