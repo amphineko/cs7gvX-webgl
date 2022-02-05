@@ -2,10 +2,10 @@ import { glMatrix, mat4, vec3 } from 'gl-matrix'
 import { NextPage } from 'next'
 import { useRef } from 'react'
 import { ShaderProgram } from '../../components/canvas'
-import { FirstPersonCamera } from '../../src/cameras/camera_fp'
 import { WebGLCanvas } from '../../components/canvas/canvas'
 import FragmentShader from '../../resources/cs7gv5/hello-triangle.frag'
 import VertexShader from '../../resources/cs7gv5/hello-triangle.vert'
+import { FirstPersonCamera } from '../../src/cameras'
 
 const { toRadian } = glMatrix
 
@@ -41,7 +41,7 @@ const HelloTrianglePage: NextPage = () => {
     const projection = mat4.create()
     const model = mat4.identity(mat4.create())
 
-    const initialize = (gl: WebGL2RenderingContext) => {
+    const initialize = (gl: WebGL2RenderingContext, canvas: HTMLCanvasElement) => {
         currentShader.current = new ShaderProgram(
             [
                 { name: 'vertex', source: VertexShader, type: gl.VERTEX_SHADER },
@@ -65,6 +65,7 @@ const HelloTrianglePage: NextPage = () => {
         gl.enableVertexAttribArray(1)
 
         currentCamera.current.addKeyboardListener()
+        currentCamera.current.addMouseListener(canvas)
         // TODO: add mouse listener
         // TODO: remove listener on unmount
     }
@@ -88,9 +89,15 @@ const HelloTrianglePage: NextPage = () => {
         }
     }
 
+    const deinitialize = (_: WebGL2RenderingContext, canvas: HTMLCanvasElement) => {
+        // currentCamera.current.removeMouseListener(canvas)
+        // currentCamera.current.removeKeyboardListener()
+    }
+
     return (
         <>
             <WebGLCanvas
+                onDeinitialize={deinitialize}
                 onDraw={draw}
                 onError={(error) => {
                     console.error(error)

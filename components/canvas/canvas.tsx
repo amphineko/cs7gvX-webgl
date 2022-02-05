@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
 
 interface Props {
+    onDeinitialize: (gl: WebGL2RenderingContext, canvas: HTMLCanvasElement) => void
     onDraw: (gl: WebGL2RenderingContext) => void
     onError: (error: Error) => void
-    onInitialize: (gl: WebGLRenderingContext) => void
+    onInitialize: (gl: WebGL2RenderingContext, canvas: HTMLCanvasElement) => void
     onResize: (width: number, height: number) => void
 }
 
@@ -52,7 +53,7 @@ export const WebGLCanvas = ({ onDraw, onError, onInitialize, onResize }: Props) 
             console.debug('DEBUG:', 'WebGL context created')
         }
 
-        onInitialize(gl)
+        onInitialize(gl, canvas.current)
 
         const drawLoopInterval = setInterval(() => {
             gl.viewport(0, 0, canvas.current.width, canvas.current.height)

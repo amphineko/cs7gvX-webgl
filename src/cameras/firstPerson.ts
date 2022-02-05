@@ -6,6 +6,7 @@ const worldUp = vec3.fromValues(0, 1, 0)
 const zero = vec3.fromValues(0, 0, 0)
 
 const keyboardTranslateRate = 10
+const mouseRotateRate = 5000.0
 
 export class FirstPersonCamera {
     #position: vec3
@@ -23,6 +24,13 @@ export class FirstPersonCamera {
     keyboardNegative = vec3.fromValues(0, 0, 0)
     keyboardPositive = vec3.fromValues(0, 0, 0)
 
+    #keydownHandler: (e: KeyboardEvent) => void
+    #keyupHandler: (e: KeyboardEvent) => void
+    #mousedownHandler: (e: MouseEvent) => void
+    #mousemoveHandler: (e: MouseEvent) => void
+
+    #canvas: HTMLCanvasElement
+
     constructor(position: vec3, pitch: number, yaw: number) {
         this.#position = vec3.clone(position)
         this.#pitch = pitch
@@ -35,12 +43,54 @@ export class FirstPersonCamera {
     }
 
     addKeyboardListener() {
-        document.addEventListener('keyup', (e) => {
-            this.#handleKeyup(e)
-        })
-        document.addEventListener('keydown', (e) => {
-            this.#handleKeydown(e)
-        })
+        document.addEventListener(
+            'keydown',
+            this.#keydownHandler || (this.#keydownHandler = (e: KeyboardEvent) => this.#handleKeydown(e))
+        )
+        document.addEventListener(
+            'keyup',
+            this.#keyupHandler || (this.#keyupHandler = (e: KeyboardEvent) => this.#handleKeyup(e))
+        )
+    }
+
+    addMouseListener(canvas: HTMLCanvasElement) {
+        this.#canvas = canvas
+        this.#canvas.addEventListener(
+            'mousedown',
+            this.#mousedownHandler || (this.#mousedownHandler = () => this.#handleMouseDown())
+        )
+    }
+
+    removeKeyboardListener() {
+        this.#keydownHandler && document.removeEventListener('keydown', this.#keydownHandler)
+        this.#keyupHandler && document.removeEventListener('keyup', this.#keyupHandler)
+    }
+
+    removeMouseListener() {
+        this.#mousedownHandler && this.#canvas.removeEventListener('mousedown', this.#mousedownHandler)
+        this.#mousemoveHandler && document.removeEventListener('mousemove', this.#mousemoveHandler)
+    }
+
+    rotate(offsetPitch: number, offsetYaw: number) {
+        this.#pitch += offsetPitch
+        this.#yaw += offsetYaw
+        this.#updateView()
+    }
+
+    setPosition(x: number, y: number, z: number) {
+        this.#position = vec3.fromValues(x, y, z)
+        this.#updateView()
+    }
+
+    setRotation(pitch: number, yaw: number) {
+        this.#pitch = pitch
+        this.#yaw = yaw
+        this.#updateView()
+    }
+
+    translate(offset: vec3) {
+        vec3.add(this.#position, this.#position, offset)
+        this.#updateView()
     }
 
     #handleKeydown(e: KeyboardEvent) {
@@ -103,26 +153,24 @@ export class FirstPersonCamera {
         }
     }
 
-    rotate(offsetPitch: number, offsetYaw: number) {
-        this.#pitch += offsetPitch
-        this.#yaw += offsetYaw
-        this.#updateView()
+    #handleMouseDown() {
+        if (document.pointerLockElement !== this.#canvas) {
+            this.#canvas.requestPointerLock()
+            document.addEventListener(
+                'mousemove',
+                this.#mousemoveHandler || (this.#mousemoveHandler = (e: MouseEvent) => this.#handleMouseMove(e))
+            )
+        } else {
+            this.#mousemoveHandler && document.removeEventListener('mousemove', this.#mousemoveHandler)
+            document.exitPointerLock()
+        }
     }
 
-    setPosition(x: number, y: number, z: number) {
-        this.#position = vec3.fromValues(x, y, z)
-        this.#updateView()
-    }
-
-    setRotation(pitch: number, yaw: number) {
-        this.#pitch = pitch
-        this.#yaw = yaw
-        this.#updateView()
-    }
-
-    translate(offset: vec3) {
-        vec3.add(this.#position, this.#position, offset)
-        this.#updateView()
+    #handleMouseMove(e: MouseEvent) {
+        this.rotate(
+            toRadian((-e.movementY / this.#canvas.clientHeight) * mouseRotateRate),
+            toRadian((e.movementX / this.#canvas.clientWidth) * mouseRotateRate)
+        )
     }
 
     #updateView() {
