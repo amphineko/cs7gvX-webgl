@@ -96,7 +96,7 @@ const TransmittancePage = () => {
         textureLoader.load(
             new URL('../../resources/cs7gv3/transmittance/checkerboard.png', import.meta.url).href,
             (tex) => {
-                const table = new BoxGeometry(20, 20, 20)
+                const table = new BoxGeometry(40, 20, 40)
 
                 const tableMaterial = new MeshBasicMaterial({
                     color: 0xffffff,
