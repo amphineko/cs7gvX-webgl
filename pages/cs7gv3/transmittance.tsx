@@ -1,14 +1,18 @@
 import { useEffect, useRef } from 'react'
 import {
     AmbientLight,
+    CubeCamera,
     CubeTextureLoader,
+    LinearMipmapLinearFilter,
     Mesh,
     PerspectiveCamera,
     PointLight,
+    RGBAFormat,
     Scene,
     ShaderMaterial,
     SphereGeometry,
     sRGBEncoding,
+    WebGLCubeRenderTarget,
     WebGLRenderer,
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -55,12 +59,13 @@ const TransmittancePage = () => {
 
         const camera = new PerspectiveCamera(75, window?.innerWidth / window?.innerHeight, 0.1, 1000)
         camera.position.x = -20
-        camera.position.y = 20
+        camera.position.y = 10
         camera.position.z = 20
 
         // camera controls
 
         const controls = new OrbitControls(camera, renderer.domElement)
+        controls.autoRotate = true
         controls.enableDamping = true
         controls.update()
 
@@ -69,8 +74,20 @@ const TransmittancePage = () => {
         const scene = new Scene()
         scene.add(camera)
 
+        // envmap
+
+        const envmapRenderTarget = new WebGLCubeRenderTarget(512, {
+            format: RGBAFormat,
+            generateMipmaps: true,
+            minFilter: LinearMipmapLinearFilter,
+        })
+
+        const cubeCamera = new CubeCamera(0.1, 1000, envmapRenderTarget)
+        scene.add(cubeCamera)
+
         // skybox
 
+        let sphereMesh: Mesh | undefined
         cubeLoader.load(
             [
                 new URL('../../resources/skybox/posx.jpeg', import.meta.url).href,
@@ -93,7 +110,7 @@ const TransmittancePage = () => {
 
                 // const sphereMaterial = new MeshLambertMaterial({
                 //     color: 0xffffff,
-                //     envMap: tex,
+                //     envMap: envmapRenderTarget.texture,
                 // })
 
                 const sphereMaterial = new ShaderMaterial({
@@ -101,7 +118,7 @@ const TransmittancePage = () => {
                         PI: Math.PI,
                     },
                     uniforms: {
-                        envMap: { value: tex },
+                        envMap: { value: envmapRenderTarget.texture },
                         flipEnvMap: { value: -1 },
                         fresnelBias: { value: 0.5 },
                         fresnelScale: { value: 5.0 },
@@ -110,8 +127,9 @@ const TransmittancePage = () => {
                     fragmentShader: FragmentShader,
                     vertexShader: VertexShader,
                 })
+                sphereMaterial.needsUpdate = true
 
-                const sphereMesh = new Mesh(sphere, sphereMaterial)
+                sphereMesh = new Mesh(sphere, sphereMaterial)
                 sphereMesh.position.set(0, 0, 0)
 
                 scene.add(sphereMesh)
@@ -138,6 +156,14 @@ const TransmittancePage = () => {
             requestAnimationFrame(render)
 
             controls.update()
+
+            if (sphereMesh) {
+                sphereMesh.visible = false
+                cubeCamera.position.copy(sphereMesh.position)
+                cubeCamera.update(renderer, scene)
+                sphereMesh.visible = true
+            }
+
             renderer.render(scene, camera)
         }
         render()
