@@ -30,6 +30,7 @@ const cubeLoader = new CubeTextureLoader()
 const TransmittancePage = () => {
     const canvas = useRef<HTMLCanvasElement>()
     const container = useRef<HTMLDivElement>()
+    const fpsIndicator = useRef<HTMLSpanElement>()
 
     useEffect(() => {
         if (!canvas.current) {
@@ -148,6 +149,9 @@ const TransmittancePage = () => {
         // render loop
 
         let cancelled = false
+        const frameTimes: number[] = []
+        let lastFrameClock = performance.now()
+        let totalFrameTime = 0
         const render = () => {
             if (cancelled) {
                 return
@@ -165,6 +169,23 @@ const TransmittancePage = () => {
             }
 
             renderer.render(scene, camera)
+
+            const now = performance.now()
+            const frameTime = now - lastFrameClock
+            lastFrameClock = now
+
+            totalFrameTime += frameTime
+            frameTimes.push(frameTime)
+
+            if (totalFrameTime > 1000) {
+                const fps = (frameTimes.length / totalFrameTime) * 1000
+                const fAvg = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length
+                const fVar = Math.sqrt(frameTimes.reduce((a, b) => a + Math.pow(b - fAvg, 2), 0) / frameTimes.length)
+                fpsIndicator.current.innerText = `fps=${fps.toFixed(2)}, avg=${fAvg.toFixed(2)}, var=${fVar.toFixed(2)}`
+
+                totalFrameTime = 0
+                frameTimes.length = 0
+            }
         }
         render()
 
@@ -183,6 +204,8 @@ const TransmittancePage = () => {
                 <p>The canvas element is not supported by your browser</p>
             </canvas>
 
+            <span className="fps" ref={fpsIndicator} />
+
             <style jsx>
                 {`
                     .canvas {
@@ -199,9 +222,11 @@ const TransmittancePage = () => {
                     }
 
                     .fps {
-                        color: white;
+                        background: black;
+                        color: green;
                         font-family: monospace;
-                        right: 0;
+                        font-size: 2vh;
+                        left: 0;
                         position: absolute;
                         top: 0;
                     }
