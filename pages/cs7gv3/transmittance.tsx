@@ -120,6 +120,9 @@ const TransmittancePage = () => {
                     },
                     uniforms: {
                         envMap: { value: envmapRenderTarget.texture },
+                        etaR: { value: 0.65 },
+                        etaG: { value: 0.66 },
+                        etaB: { value: 0.67 },
                         flipEnvMap: { value: -1 },
                         fresnelBias: { value: 0.5 },
                         fresnelScale: { value: 5.0 },
