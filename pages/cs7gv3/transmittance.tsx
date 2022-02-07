@@ -14,6 +14,7 @@ import {
     SphereGeometry,
     sRGBEncoding,
     TextureLoader,
+    TorusKnotGeometry,
     WebGLCubeRenderTarget,
     WebGLRenderer,
 } from 'three'
@@ -111,7 +112,7 @@ const TransmittancePage = () => {
 
         // content: glass sphere
 
-        const sphere = new SphereGeometry(10, 32, 32)
+        const sphere = new SphereGeometry(10, 512, 512)
 
         const sphereMaterial = new ShaderMaterial({
             defines: {
@@ -131,9 +132,38 @@ const TransmittancePage = () => {
             vertexShader: VertexShader,
         })
         sphereMaterial.needsUpdate = true
+        sphereMaterial.visible = false
 
         const sphereMesh = new Mesh(sphere, sphereMaterial)
         scene.add(sphereMesh)
+
+        // content: knot
+
+        const knot = new TorusKnotGeometry(5, 1, 100, 16)
+
+        const knotMaterial = new ShaderMaterial({
+            defines: {
+                PI: Math.PI,
+            },
+            uniforms: {
+                envMap: { value: envmapRenderTarget.texture },
+                etaR: { value: 0.6 },
+                etaG: { value: 0.65 },
+                etaB: { value: 0.7 },
+                flipEnvMap: { value: -1 },
+                fresnelBias: { value: 0.1 },
+                fresnelScale: { value: 5.0 },
+                fresnelPower: { value: 5.0 },
+            },
+            fragmentShader: FragmentShader,
+            vertexShader: VertexShader,
+        })
+        knotMaterial.needsUpdate = true
+        knotMaterial.visible = true
+
+        const knotMesh = new Mesh(knot, knotMaterial)
+        knotMesh.position.set(0, 0, 0)
+        scene.add(knotMesh)
 
         // content: skybox
 
@@ -159,15 +189,25 @@ const TransmittancePage = () => {
             import('dat.gui')
                 .then((dat) => {
                     gui = new dat.GUI()
-                    const fresnelFolder = gui.addFolder('Fresnel')
-                    fresnelFolder.add(sphereMaterial.uniforms.fresnelBias, 'value', 0, 1.0, 0.01).name('Bias')
-                    fresnelFolder.add(sphereMaterial.uniforms.fresnelPower, 'value', 0, 10.0, 0.01).name('Power')
-                    fresnelFolder.add(sphereMaterial.uniforms.fresnelScale, 'value', 0, 10.0, 0.01).name('Scale')
-                    const etaFolder = gui.addFolder('Fresnel η')
-                    etaFolder.add(sphereMaterial.uniforms.etaR, 'value', 0.5, 1.0, 0.01).name('Red')
-                    etaFolder.add(sphereMaterial.uniforms.etaG, 'value', 0.5, 1.0, 0.01).name('Green')
-                    etaFolder.add(sphereMaterial.uniforms.etaB, 'value', 0.5, 1.0, 0.01).name('Blue')
-                    fresnelFolder.open()
+                    const sphere = gui.addFolder('Fresnel: Sphere')
+                    sphere.add(sphereMaterial, 'visible', false).name('Visibility')
+                    sphere.add(sphereMaterial.uniforms.fresnelBias, 'value', 0, 1.0, 0.01).name('Bias')
+                    sphere.add(sphereMaterial.uniforms.fresnelPower, 'value', 0, 10.0, 0.01).name('Power')
+                    sphere.add(sphereMaterial.uniforms.fresnelScale, 'value', 0, 10.0, 0.01).name('Scale')
+                    sphere.add(sphereMaterial.uniforms.etaR, 'value', 0.5, 1.0, 0.01).name('η-Red')
+                    sphere.add(sphereMaterial.uniforms.etaG, 'value', 0.5, 1.0, 0.01).name('η-Green')
+                    sphere.add(sphereMaterial.uniforms.etaB, 'value', 0.5, 1.0, 0.01).name('η-Blue')
+                    sphere.open()
+
+                    const knot = gui.addFolder('Fresnel: Knot')
+                    knot.add(knotMaterial, 'visible', true).name('Visibility')
+                    knot.add(knotMaterial.uniforms.fresnelBias, 'value', 0, 1.0, 0.01).name('Bias')
+                    knot.add(knotMaterial.uniforms.fresnelPower, 'value', 0, 10.0, 0.01).name('Power')
+                    knot.add(knotMaterial.uniforms.fresnelScale, 'value', 0, 10.0, 0.01).name('Scale')
+                    knot.add(knotMaterial.uniforms.etaR, 'value', 0.5, 1.0, 0.01).name('η-Red')
+                    knot.add(knotMaterial.uniforms.etaG, 'value', 0.5, 1.0, 0.01).name('η-Green')
+                    knot.add(knotMaterial.uniforms.etaB, 'value', 0.5, 1.0, 0.01).name('η-Blue')
+                    knot.open()
                 })
                 .catch((error) => {
                     console.error('Failed to import dat.gui:', error)
