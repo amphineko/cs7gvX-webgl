@@ -1,6 +1,6 @@
+import type { GUI } from 'dat.gui'
 import { useEffect, useRef } from 'react'
 import {
-    AmbientLight,
     BoxGeometry,
     CubeCamera,
     CubeTextureLoader,
@@ -8,7 +8,6 @@ import {
     Mesh,
     MeshBasicMaterial,
     PerspectiveCamera,
-    PointLight,
     RGBAFormat,
     Scene,
     ShaderMaterial,
@@ -91,7 +90,7 @@ const TransmittancePage = () => {
         const cubeCamera = new CubeCamera(0.1, 1000, envmapRenderTarget)
         scene.add(cubeCamera)
 
-        // content
+        // content: table of checkerboard
 
         textureLoader.load(
             new URL('../../resources/cs7gv3/transmittance/checkerboard.png', import.meta.url).href,
@@ -110,7 +109,34 @@ const TransmittancePage = () => {
             }
         )
 
-        let sphereMesh: Mesh | undefined
+        // content: glass sphere
+
+        const sphere = new SphereGeometry(10, 32, 32)
+
+        const sphereMaterial = new ShaderMaterial({
+            defines: {
+                PI: Math.PI,
+            },
+            uniforms: {
+                envMap: { value: envmapRenderTarget.texture },
+                etaR: { value: 0.6 },
+                etaG: { value: 0.65 },
+                etaB: { value: 0.7 },
+                flipEnvMap: { value: -1 },
+                fresnelBias: { value: 0.1 },
+                fresnelScale: { value: 1.0 },
+                fresnelPower: { value: 5.0 },
+            },
+            fragmentShader: FragmentShader,
+            vertexShader: VertexShader,
+        })
+        sphereMaterial.needsUpdate = true
+
+        const sphereMesh = new Mesh(sphere, sphereMaterial)
+        scene.add(sphereMesh)
+
+        // content: skybox
+
         cubeLoader.load(
             [
                 new URL('../../resources/skybox/posx.jpeg', import.meta.url).href,
@@ -122,54 +148,32 @@ const TransmittancePage = () => {
             ],
             (tex) => {
                 tex.encoding = sRGBEncoding
-
-                // skybox
-
                 scene.background = tex
-
-                // sphere
-
-                const sphere = new SphereGeometry(10, 50, 50)
-
-                // const sphereMaterial = new MeshLambertMaterial({
-                //     color: 0xffffff,
-                //     envMap: envmapRenderTarget.texture,
-                // })
-
-                const sphereMaterial = new ShaderMaterial({
-                    defines: {
-                        PI: Math.PI,
-                    },
-                    uniforms: {
-                        envMap: { value: envmapRenderTarget.texture },
-                        etaR: { value: 0.65 },
-                        etaG: { value: 0.66 },
-                        etaB: { value: 0.67 },
-                        flipEnvMap: { value: -1 },
-                        fresnelBias: { value: 0.1 },
-                        fresnelScale: { value: 5.0 },
-                        fresnelPower: { value: 2.0 },
-                    },
-                    fragmentShader: FragmentShader,
-                    vertexShader: VertexShader,
-                })
-                sphereMaterial.needsUpdate = true
-
-                sphereMesh = new Mesh(sphere, sphereMaterial)
-                sphereMesh.position.set(0, 0, 0)
-
-                scene.add(sphereMesh)
             }
         )
 
-        // lights
+        // gui
 
-        const pointLight = new PointLight(0xffffff, 1, 100)
-        pointLight.position.set(0, 25, 25)
-        scene.add(pointLight)
-
-        const ambientLight = new AmbientLight(0xffffff, 0.5)
-        scene.add(ambientLight)
+        let gui: GUI
+        if (window !== undefined) {
+            import('dat.gui')
+                .then((dat) => {
+                    gui = new dat.GUI()
+                    const fresnelFolder = gui.addFolder('Fresnel')
+                    fresnelFolder.add(sphereMaterial.uniforms.fresnelBias, 'value', 0, 1.0, 0.01).name('Bias')
+                    fresnelFolder.add(sphereMaterial.uniforms.fresnelPower, 'value', 0, 10.0, 0.01).name('Power')
+                    fresnelFolder.add(sphereMaterial.uniforms.fresnelScale, 'value', 0, 10.0, 0.01).name('Scale')
+                    const etaFolder = gui.addFolder('Fresnel η')
+                    etaFolder.add(sphereMaterial.uniforms.etaR, 'value', 0.5, 1.0, 0.01).name('Red')
+                    etaFolder.add(sphereMaterial.uniforms.etaG, 'value', 0.5, 1.0, 0.01).name('Green')
+                    etaFolder.add(sphereMaterial.uniforms.etaB, 'value', 0.5, 1.0, 0.01).name('Blue')
+                    fresnelFolder.open()
+                })
+                .catch((error) => {
+                    console.error('Failed to import dat.gui:', error)
+                    throw error
+                })
+        }
 
         // render loop
 
@@ -217,6 +221,7 @@ const TransmittancePage = () => {
         return () => {
             cancelled = true
 
+            gui.destroy()
             resizeObserver.disconnect()
             controls.dispose()
             renderer.dispose()
