@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react'
 import {
     AmbientLight,
+    BoxGeometry,
     CubeCamera,
     CubeTextureLoader,
     LinearMipmapLinearFilter,
     Mesh,
+    MeshBasicMaterial,
     PerspectiveCamera,
     PointLight,
     RGBAFormat,
@@ -12,6 +14,7 @@ import {
     ShaderMaterial,
     SphereGeometry,
     sRGBEncoding,
+    TextureLoader,
     WebGLCubeRenderTarget,
     WebGLRenderer,
 } from 'three'
@@ -26,6 +29,8 @@ const dracoLoader = new DRACOLoader()
 gltfLoader.setDRACOLoader(dracoLoader)
 
 const cubeLoader = new CubeTextureLoader()
+
+const textureLoader = new TextureLoader()
 
 const TransmittancePage = () => {
     const canvas = useRef<HTMLCanvasElement>()
@@ -59,8 +64,8 @@ const TransmittancePage = () => {
         // camera initialization
 
         const camera = new PerspectiveCamera(75, window?.innerWidth / window?.innerHeight, 0.1, 1000)
-        camera.position.x = -20
-        camera.position.y = 10
+        camera.position.x = 0
+        camera.position.y = 0
         camera.position.z = 20
 
         // camera controls
@@ -86,7 +91,24 @@ const TransmittancePage = () => {
         const cubeCamera = new CubeCamera(0.1, 1000, envmapRenderTarget)
         scene.add(cubeCamera)
 
-        // skybox
+        // content
+
+        textureLoader.load(
+            new URL('../../resources/cs7gv3/transmittance/checkerboard.png', import.meta.url).href,
+            (tex) => {
+                const table = new BoxGeometry(20, 20, 20)
+
+                const tableMaterial = new MeshBasicMaterial({
+                    color: 0xffffff,
+                    map: tex,
+                })
+
+                const tableMesh = new Mesh(table, tableMaterial)
+                tableMesh.position.set(0, -20, 0)
+
+                scene.add(tableMesh)
+            }
+        )
 
         let sphereMesh: Mesh | undefined
         cubeLoader.load(
@@ -124,7 +146,7 @@ const TransmittancePage = () => {
                         etaG: { value: 0.66 },
                         etaB: { value: 0.67 },
                         flipEnvMap: { value: -1 },
-                        fresnelBias: { value: 0.5 },
+                        fresnelBias: { value: 0.1 },
                         fresnelScale: { value: 5.0 },
                         fresnelPower: { value: 2.0 },
                     },
