@@ -14,13 +14,8 @@ const config = {
                 rules: [
                     ...config.module.rules,
                     {
-                        // fragment shader source
-                        test: /\.frag/,
-                        type: 'asset/source',
-                    },
-                    {
-                        // vertex shader source
-                        test: /\.vert/,
+                        // fragment/vertex shader source
+                        test: /\.(frag|glsl|vert)/,
                         type: 'asset/source',
                     },
                 ],
