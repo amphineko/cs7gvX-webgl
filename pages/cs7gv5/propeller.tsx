@@ -1,3 +1,4 @@
+import type { GUI } from 'dat.gui'
 import { useEffect, useRef } from 'react'
 import { Euler, Object3D, PerspectiveCamera, PointLight, Scene, sRGBEncoding, WebGLRenderer } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -60,12 +61,29 @@ const PropellerPage = () => {
         let plane: Object3D | null = null
         let propeller: Object3D | null = null
         scene.add(camera)
+        let gui: GUI | undefined
         gltfLoader.load(
             '/models/propeller/scene.gltf',
             (gltf) => {
                 scene.add(gltf.scene)
                 plane = gltf.scene.getObjectByName('Root')
                 propeller = gltf.scene.getObjectByName('Propeller')
+
+                import('dat.gui')
+                    .then((dat) => {
+                        gui = new dat.GUI()
+                        const planeFolder = gui.addFolder('Plane')
+                        planeFolder.add(plane.rotation, 'x', degToRad(-90), degToRad(90)).step(0.01).listen()
+                        planeFolder.add(plane.rotation, 'y', degToRad(-90), degToRad(90)).step(0.01).listen()
+                        planeFolder.add(plane.rotation, 'z', degToRad(-90), degToRad(90)).step(0.01).listen()
+                        planeFolder.open()
+                        const propellerFolder = gui.addFolder('Propeller')
+                        propellerFolder.add(propeller.rotation, 'x', degToRad(-90), degToRad(90)).step(0.01).listen()
+                        propellerFolder.add(propeller.rotation, 'y', degToRad(-90), degToRad(90)).step(0.01).listen()
+                        propellerFolder.add(propeller.rotation, 'z', degToRad(-90), degToRad(90)).step(0.01).listen()
+                        propellerFolder.open()
+                    })
+                    .catch((error) => console.error(error))
             },
             (xhr) => console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`),
             (error) => console.error(error)
@@ -179,6 +197,7 @@ const PropellerPage = () => {
         return () => {
             cancelled = true
 
+            gui?.destroy()
             document.removeEventListener('keydown', onKeydown)
             document.removeEventListener('keyup', onKeyup)
             resizeObserver.disconnect()
