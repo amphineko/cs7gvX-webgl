@@ -26,8 +26,8 @@ const PropellerPage = () => {
             const width = (canvas.current.width = container.current.clientWidth)
             const height = (canvas.current.height = container.current.clientHeight)
 
-            camera.aspect = width / height
-            camera.updateProjectionMatrix()
+            orbitCamera.aspect = width / height
+            orbitCamera.updateProjectionMatrix()
 
             renderer.setViewport(0, 0, width, height)
         })
@@ -41,26 +41,30 @@ const PropellerPage = () => {
 
         // camera initialization
 
-        const camera = new PerspectiveCamera(75, window?.innerWidth / window?.innerHeight, 0.1, 1000)
-        camera.position.x = 2.5
-        camera.position.y = 2.5
-        camera.position.z = -2.5
+        const orbitCamera = new PerspectiveCamera(75, window?.innerWidth / window?.innerHeight, 0.1, 1000)
+        orbitCamera.position.x = 2.5
+        orbitCamera.position.y = 2.5
+        orbitCamera.position.z = -2.5
+
+        const controlledCamera = new PerspectiveCamera(75, window?.innerWidth / window?.innerHeight, 0.1, 1000)
+
+        const cameraOptions = { firstPerson: false }
 
         const light = new PointLight(0xffffff, 1, 100)
-        camera.add(light)
+        orbitCamera.add(light)
 
         // camera controls
 
-        const controls = new OrbitControls(camera, renderer.domElement)
-        controls.enableDamping = true
-        controls.update()
+        const orbinControls = new OrbitControls(orbitCamera, renderer.domElement)
+        orbinControls.enableDamping = true
+        orbinControls.update()
 
         // scene initialization
 
         const scene = new Scene()
         let plane: Object3D | null = null
         let propeller: Object3D | null = null
-        scene.add(camera)
+        scene.add(orbitCamera)
         let gui: GUI | undefined
         gltfLoader.load(
             '/models/propeller/scene.gltf',
@@ -68,6 +72,10 @@ const PropellerPage = () => {
                 scene.add(gltf.scene)
                 plane = gltf.scene.getObjectByName('Root')
                 propeller = gltf.scene.getObjectByName('Propeller')
+
+                plane.add(controlledCamera)
+                controlledCamera.translateY(1.5)
+                controlledCamera.rotateY(degToRad(90))
 
                 import('dat.gui')
                     .then((dat) => {
@@ -82,6 +90,9 @@ const PropellerPage = () => {
                         propellerFolder.add(propeller.rotation, 'y', degToRad(-90), degToRad(90)).step(0.01).listen()
                         propellerFolder.add(propeller.rotation, 'z', degToRad(-90), degToRad(90)).step(0.01).listen()
                         propellerFolder.open()
+                        const cameraFolder = gui.addFolder('Camera')
+                        cameraFolder.add(cameraOptions, 'firstPerson')
+                        cameraFolder.open()
                     })
                     .catch((error) => console.error(error))
             },
@@ -174,8 +185,12 @@ const PropellerPage = () => {
                 )
             }
 
-            controls.update()
-            renderer.render(scene, camera)
+            if (cameraOptions.firstPerson) {
+                renderer.render(scene, controlledCamera)
+            } else {
+                orbinControls.update()
+                renderer.render(scene, orbitCamera)
+            }
 
             totalFrameTime += delta
             frameTimes.push(delta)
@@ -201,7 +216,7 @@ const PropellerPage = () => {
             document.removeEventListener('keydown', onKeydown)
             document.removeEventListener('keyup', onKeyup)
             resizeObserver.disconnect()
-            controls.dispose()
+            orbinControls.dispose()
             renderer.dispose()
         }
     }, [])
